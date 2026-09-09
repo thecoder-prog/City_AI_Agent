@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 import json
 import re
+import ast
 
 from agent import run_agent
 
@@ -24,7 +25,6 @@ st.set_page_config(
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 
 if "agent_history" not in st.session_state:
     st.session_state.agent_history = []
@@ -65,141 +65,98 @@ st.markdown(
     button[kind="secondary"] {
 
         background: #287df5 !important;
-
         color: white !important;
-
         border: none !important;
-
         border-radius: 10px !important;
-
         min-height: 44px;
-
         font-weight: 600;
     }
 
     .sidebar-heading {
 
         font-size: 16px;
-
         font-weight: 700;
-
         margin-top: 22px;
-
         margin-bottom: 10px;
-
         padding-top: 18px;
-
         border-top: 1px solid #38536b;
     }
 
     .header-title {
 
         font-size: 27px;
-
         font-weight: 750;
-
         color: #102a43;
-
         margin-bottom: 3px;
     }
 
     .header-subtitle {
 
         font-size: 13px;
-
         color: #64748b;
     }
 
     .online-badge {
 
         background: #ecfdf5;
-
         border: 1px solid #bbf7d0;
-
         color: #15803d;
-
         border-radius: 20px;
-
         padding: 7px 13px;
-
         font-size: 12px;
-
         font-weight: 650;
-
         text-align: center;
     }
 
     .welcome-title {
 
         text-align: center;
-
         color: #102a43;
-
         font-size: 28px;
-
         font-weight: 750;
-
         margin-top: 35px;
     }
 
     .welcome-subtitle {
 
         text-align: center;
-
         color: #64748b;
-
         font-size: 14px;
-
         margin-bottom: 25px;
     }
 
     div.stButton > button {
 
         border-radius: 10px;
-
         border: 1px solid #d5dde7;
-
         background: white;
-
         color: #17324d;
-
         min-height: 42px;
-
         font-size: 13px;
-
         transition: 0.2s;
     }
 
     div.stButton > button:hover {
 
         border-color: #3b82f6;
-
         color: #2563eb;
-
         background: #f8fbff;
     }
 
     [data-testid="stChatMessage"] {
 
         border-radius: 14px;
-
         margin-bottom: 10px;
     }
 
     .tool-status {
 
         background: #eff6ff;
-
         border: 1px solid #bfdbfe;
-
         color: #1d4ed8;
-
         padding: 9px 12px;
-
         border-radius: 9px;
-
         font-size: 12px;
-
         margin: 8px 0;
     }
 
@@ -249,7 +206,6 @@ with st.sidebar:
     ):
 
         st.session_state.messages = []
-
         st.session_state.agent_history = []
 
         st.rerun()
@@ -339,8 +295,8 @@ with st.sidebar:
     )
 
     st.caption(
-            "© 2026. All rights reserved."
-        )
+        "© 2026. All rights reserved."
+    )
 
 
 # ============================================================
@@ -521,6 +477,7 @@ if prompt_to_process:
         "content": prompt_to_process,
 
         "time": current_time
+
     })
 
 
@@ -622,16 +579,22 @@ if prompt_to_process:
                 for tool in tool_results:
 
                     if tool["name"] != "get_weather":
-
                         continue
 
 
                     result_text = tool["result"]
 
 
-                    # ------------------------------------------------
-                    # PARSE JSON
-                    # ------------------------------------------------
+                    # =================================================
+                    # PARSE WEATHER RESULT
+                    # =================================================
+
+                    weather = None
+
+
+                    # -------------------------------------------------
+                    # METHOD 1: JSON
+                    # -------------------------------------------------
 
                     try:
 
@@ -639,7 +602,40 @@ if prompt_to_process:
                             result_text
                         )
 
-                    except json.JSONDecodeError:
+                    except (
+                        json.JSONDecodeError,
+                        TypeError
+                    ):
+
+                        weather = None
+
+
+                    # -------------------------------------------------
+                    # METHOD 2: Python dictionary string
+                    # -------------------------------------------------
+
+                    if weather is None:
+
+                        try:
+
+                            weather = ast.literal_eval(
+                                result_text
+                            )
+
+                        except (
+                            ValueError,
+                            SyntaxError,
+                            TypeError
+                        ):
+
+                            weather = None
+
+
+                    # -------------------------------------------------
+                    # IF WEATHER CANNOT BE PARSED
+                    # -------------------------------------------------
+
+                    if not isinstance(weather, dict):
 
                         st.warning(
                             "Weather data could not be displayed."
@@ -648,9 +644,9 @@ if prompt_to_process:
                         continue
 
 
-                    # ------------------------------------------------
+                    # =================================================
                     # CHECK ERROR
-                    # ------------------------------------------------
+                    # =================================================
 
                     if not weather.get(
                         "success",
@@ -709,7 +705,6 @@ if prompt_to_process:
                     st.markdown(
                         "### 🌦️ Current Weather"
                     )
-
 
                     st.markdown(
                         f"## 📍 {city}"
@@ -782,7 +777,6 @@ if prompt_to_process:
                 for tool in tool_results:
 
                     if tool["name"] != "get_news":
-
                         continue
 
 
@@ -809,7 +803,6 @@ if prompt_to_process:
 
 
                         if not lines:
-
                             continue
 
 
@@ -870,6 +863,7 @@ if prompt_to_process:
                             "url": url,
 
                             "summary": summary
+
                         })
 
 
@@ -938,6 +932,7 @@ if prompt_to_process:
                     "time": datetime.now().strftime(
                         "%I:%M %p"
                     )
+
                 })
 
 
@@ -948,6 +943,7 @@ if prompt_to_process:
                     "⚠️ Something went wrong.\n\n"
 
                     f"`{str(e)}`"
+
                 )
 
 
@@ -965,4 +961,5 @@ if prompt_to_process:
                     "time": datetime.now().strftime(
                         "%I:%M %p"
                     )
+
                 })
