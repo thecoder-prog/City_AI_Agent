@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+import json
 import re
 
 from agent import run_agent
@@ -24,6 +25,7 @@ st.set_page_config(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+
 if "agent_history" not in st.session_state:
     st.session_state.agent_history = []
 
@@ -36,10 +38,6 @@ st.markdown(
     """
     <style>
 
-    /* =====================================================
-       MAIN APPLICATION
-    ===================================================== */
-
     .stApp {
         background-color: #f6f8fb;
     }
@@ -49,11 +47,6 @@ st.markdown(
         padding-top: 1rem;
         padding-bottom: 6rem;
     }
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
 
     section[data-testid="stSidebar"] {
         background: linear-gradient(
@@ -68,18 +61,15 @@ st.markdown(
         color: #e7f0f8;
     }
 
-
-    /* =====================================================
-       SIDEBAR BUTTON
-    ===================================================== */
-
     section[data-testid="stSidebar"]
     button[kind="secondary"] {
 
         background: #287df5 !important;
+
         color: white !important;
 
         border: none !important;
+
         border-radius: 10px !important;
 
         min-height: 44px;
@@ -87,16 +77,14 @@ st.markdown(
         font-weight: 600;
     }
 
-
-    /* =====================================================
-       SIDEBAR HEADINGS
-    ===================================================== */
-
     .sidebar-heading {
+
         font-size: 16px;
+
         font-weight: 700;
 
         margin-top: 22px;
+
         margin-bottom: 10px;
 
         padding-top: 18px;
@@ -104,30 +92,10 @@ st.markdown(
         border-top: 1px solid #38536b;
     }
 
-
-    /* =====================================================
-       SIDEBAR TOOL CARDS
-    ===================================================== */
-
-    .tool-card {
-        background: rgba(255,255,255,0.07);
-
-        border: 1px solid rgba(147,197,253,0.25);
-
-        border-radius: 12px;
-
-        padding: 14px;
-
-        margin-bottom: 10px;
-    }
-
-
-    /* =====================================================
-       MAIN HEADER
-    ===================================================== */
-
     .header-title {
+
         font-size: 27px;
+
         font-weight: 750;
 
         color: #102a43;
@@ -136,17 +104,14 @@ st.markdown(
     }
 
     .header-subtitle {
+
         font-size: 13px;
 
         color: #64748b;
     }
 
-
-    /* =====================================================
-       ONLINE BADGE
-    ===================================================== */
-
     .online-badge {
+
         background: #ecfdf5;
 
         border: 1px solid #bbf7d0;
@@ -164,12 +129,8 @@ st.markdown(
         text-align: center;
     }
 
-
-    /* =====================================================
-       WELCOME
-    ===================================================== */
-
     .welcome-title {
+
         text-align: center;
 
         color: #102a43;
@@ -182,6 +143,7 @@ st.markdown(
     }
 
     .welcome-subtitle {
+
         text-align: center;
 
         color: #64748b;
@@ -190,11 +152,6 @@ st.markdown(
 
         margin-bottom: 25px;
     }
-
-
-    /* =====================================================
-       EXAMPLE BUTTONS
-    ===================================================== */
 
     div.stButton > button {
 
@@ -222,74 +179,12 @@ st.markdown(
         background: #f8fbff;
     }
 
-
-    /* =====================================================
-       CHAT MESSAGE CONTAINERS
-    ===================================================== */
-
     [data-testid="stChatMessage"] {
 
         border-radius: 14px;
 
         margin-bottom: 10px;
     }
-
-
-    /* =====================================================
-       WEATHER CARD
-    ===================================================== */
-
-    .weather-box {
-
-        background: linear-gradient(
-            135deg,
-            #eff7ff,
-            #ffffff
-        );
-
-        border: 1px solid #d4e5f6;
-
-        border-radius: 14px;
-
-        padding: 20px;
-
-        margin-top: 10px;
-    }
-
-    .weather-temp {
-
-        font-size: 40px;
-
-        font-weight: 750;
-
-        color: #102a43;
-    }
-
-
-    /* =====================================================
-       NEWS
-    ===================================================== */
-
-    .news-card {
-
-        background: white;
-
-        border: 1px solid #e1e8f0;
-
-        border-radius: 12px;
-
-        padding: 15px;
-
-        min-height: 200px;
-
-        box-shadow:
-            0 3px 12px rgba(15,23,42,0.04);
-    }
-
-
-    /* =====================================================
-       TOOL STATUS
-    ===================================================== */
 
     .tool-status {
 
@@ -308,11 +203,6 @@ st.markdown(
         margin: 8px 0;
     }
 
-
-    /* =====================================================
-       RESPONSIVE
-    ===================================================== */
-
     @media (max-width: 800px) {
 
         .header-title {
@@ -321,10 +211,6 @@ st.markdown(
 
         .welcome-title {
             font-size: 23px;
-        }
-
-        .weather-temp {
-            font-size: 32px;
         }
 
     }
@@ -341,20 +227,22 @@ st.markdown(
 
 with st.sidebar:
 
-    # Brand
     st.markdown(
         "## 🏙️ City AI Agent"
     )
 
     st.caption(
-        "This AI companion for weather "
+        "AI companion for weather "
         "and latest city news."
     )
 
     st.write("")
 
 
-    # New chat
+    # ========================================================
+    # NEW CHAT
+    # ========================================================
+
     if st.button(
         "＋  New Chat",
         use_container_width=True
@@ -367,7 +255,10 @@ with st.sidebar:
         st.rerun()
 
 
-    # Tools
+    # ========================================================
+    # AVAILABLE TOOLS
+    # ========================================================
+
     st.markdown(
         '<div class="sidebar-heading">'
         '🔧 Available Tools'
@@ -376,9 +267,7 @@ with st.sidebar:
     )
 
 
-    with st.container(
-        border=True
-    ):
+    with st.container(border=True):
 
         st.markdown(
             "### 🌦️ Weather"
@@ -390,9 +279,7 @@ with st.sidebar:
         )
 
 
-    with st.container(
-        border=True
-    ):
+    with st.container(border=True):
 
         st.markdown(
             "### 📰 Latest News"
@@ -404,7 +291,10 @@ with st.sidebar:
         )
 
 
-    # Examples
+    # ========================================================
+    # EXAMPLES
+    # ========================================================
+
     st.markdown(
         '<div class="sidebar-heading">'
         '💡 Example Questions'
@@ -425,7 +315,10 @@ with st.sidebar:
     )
 
 
-    # Status
+    # ========================================================
+    # STATUS
+    # ========================================================
+
     st.markdown(
         '<div class="sidebar-heading">'
         '⚡ Agent Status'
@@ -441,15 +334,12 @@ with st.sidebar:
         "Powered by LangChain • Gemini • Tavily"
     )
 
-    # st.caption(
-    #     "Tools are automatically executed "
-    #     "when required."
-    # )
+    st.caption(
+        "Designed & Developed by Yogesh Bhore."
+    )
 
     st.caption(
-            "Designed & Developed by Yogesh Bhore."
             "© 2026. All rights reserved."
-             
         )
 
 
@@ -514,7 +404,6 @@ if not st.session_state.messages:
         unsafe_allow_html=True
     )
 
-
     st.write("")
 
 
@@ -557,7 +446,8 @@ if not st.session_state.messages:
         ):
 
             st.session_state.example_prompt = (
-                "Give me the current weather and latest news in Delhi."
+                "Give me the current weather "
+                "and latest news in Delhi."
             )
 
             st.rerun()
@@ -571,9 +461,7 @@ for message in st.session_state.messages:
 
     role = message["role"]
 
-    with st.chat_message(
-        role
-    ):
+    with st.chat_message(role):
 
         st.markdown(
             message["content"]
@@ -595,14 +483,18 @@ example_prompt = st.session_state.pop(
     None
 )
 
+
 user_prompt = st.chat_input(
     "Ask about weather or latest city news..."
 )
 
 
 prompt_to_process = (
+
     user_prompt
+
     if user_prompt
+
     else example_prompt
 )
 
@@ -618,26 +510,25 @@ if prompt_to_process:
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # SAVE USER MESSAGE
-    # --------------------------------------------------------
+    # ========================================================
 
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": prompt_to_process,
-            "time": current_time
-        }
-    )
+    st.session_state.messages.append({
+
+        "role": "user",
+
+        "content": prompt_to_process,
+
+        "time": current_time
+    })
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # DISPLAY USER MESSAGE
-    # --------------------------------------------------------
+    # ========================================================
 
-    with st.chat_message(
-        "user"
-    ):
+    with st.chat_message("user"):
 
         st.markdown(
             prompt_to_process
@@ -648,13 +539,11 @@ if prompt_to_process:
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # RUN AGENT
-    # --------------------------------------------------------
+    # ========================================================
 
-    with st.chat_message(
-        "assistant"
-    ):
+    with st.chat_message("assistant"):
 
         with st.spinner(
             "City AI is thinking..."
@@ -663,7 +552,9 @@ if prompt_to_process:
             try:
 
                 result = run_agent(
+
                     prompt_to_process,
+
                     st.session_state.agent_history
                 )
 
@@ -675,7 +566,10 @@ if prompt_to_process:
                 tool_results = result["tool_results"]
 
 
-                # Save history
+                # =================================================
+                # SAVE HISTORY
+                # =================================================
+
                 st.session_state.agent_history = history
 
 
@@ -687,16 +581,20 @@ if prompt_to_process:
 
                     tool_name = tool["name"]
 
-                    args = tool["args"]
-
                     st.markdown(
+
                         f"""
                         <div class="tool-status">
+
                         🔧 <b>{tool_name}</b>
+
                         &nbsp; • &nbsp;
+
                         Automatically executed
+
                         </div>
                         """,
+
                         unsafe_allow_html=True
                     )
 
@@ -724,125 +622,156 @@ if prompt_to_process:
                 for tool in tool_results:
 
                     if tool["name"] != "get_weather":
+
                         continue
 
 
-                    args = tool["args"]
-
                     result_text = tool["result"]
 
-                    city = args.get(
+
+                    # ------------------------------------------------
+                    # PARSE JSON
+                    # ------------------------------------------------
+
+                    try:
+
+                        weather = json.loads(
+                            result_text
+                        )
+
+                    except json.JSONDecodeError:
+
+                        st.warning(
+                            "Weather data could not be displayed."
+                        )
+
+                        continue
+
+
+                    # ------------------------------------------------
+                    # CHECK ERROR
+                    # ------------------------------------------------
+
+                    if not weather.get(
+                        "success",
+                        True
+                    ):
+
+                        st.error(
+                            weather.get(
+                                "error",
+                                "Weather data unavailable."
+                            )
+                        )
+
+                        continue
+
+
+                    # =================================================
+                    # EXTRACT SIX FIELDS
+                    # =================================================
+
+                    city = weather.get(
                         "city",
-                        "Unknown"
+                        "--"
+                    )
+
+                    latitude = weather.get(
+                        "latitude",
+                        "--"
+                    )
+
+                    longitude = weather.get(
+                        "longitude",
+                        "--"
+                    )
+
+                    temperature = weather.get(
+                        "temperature",
+                        "--"
+                    )
+
+                    pressure = weather.get(
+                        "pressure",
+                        "--"
+                    )
+
+                    humidity = weather.get(
+                        "humidity",
+                        "--"
                     )
 
 
-                    temperature = "--"
-
-                    feels_like = "--"
-
-                    humidity = "--"
-
-                    condition = "Unknown"
-
-
-                    # Parse API result
-                    for line in result_text.splitlines():
-
-                        if line.startswith(
-                            "Temperature:"
-                        ):
-
-                            temperature = line.replace(
-                                "Temperature:",
-                                ""
-                            ).strip()
-
-
-                        elif line.startswith(
-                            "Feels like:"
-                        ):
-
-                            feels_like = line.replace(
-                                "Feels like:",
-                                ""
-                            ).strip()
-
-
-                        elif line.startswith(
-                            "Humidity:"
-                        ):
-
-                            humidity = line.replace(
-                                "Humidity:",
-                                ""
-                            ).strip()
-
-
-                        elif line.startswith(
-                            "Condition:"
-                        ):
-
-                            condition = line.replace(
-                                "Condition:",
-                                ""
-                            ).strip()
-
+                    # =================================================
+                    # WEATHER DASHBOARD
+                    # =================================================
 
                     st.markdown(
                         "### 🌦️ Current Weather"
                     )
 
 
-                    weather_col1, weather_col2 = st.columns(
-                        [3, 1]
+                    st.markdown(
+                        f"## 📍 {city}"
                     )
 
 
-                    with weather_col1:
+                    # =================================================
+                    # MAIN WEATHER METRICS
+                    # =================================================
 
-                        st.markdown(
-                            f"## 📍 {city}"
-                        )
-
-                        st.caption(
-                            condition.title()
-                        )
+                    col1, col2, col3 = st.columns(3)
 
 
-                    with weather_col2:
+                    with col1:
 
-                        st.markdown(
-                            f"### {temperature}"
+                        st.metric(
+                            "🌡️ Temperature",
+                            f"{temperature} °C"
                         )
 
 
-                    detail1, detail2, detail3 = st.columns(
-                        3
-                    )
+                    with col2:
+
+                        st.metric(
+                            "🔽 Pressure",
+                            f"{pressure} hPa"
+                        )
 
 
-                    with detail1:
+                    with col3:
 
                         st.metric(
                             "💧 Humidity",
-                            humidity
+                            f"{humidity}%"
                         )
 
 
-                    with detail2:
+                    # =================================================
+                    # LOCATION
+                    # =================================================
+
+                    st.markdown(
+                        "#### 📍 Location"
+                    )
+
+
+                    location1, location2 = st.columns(2)
+
+
+                    with location1:
 
                         st.metric(
-                            "🌡️ Feels Like",
-                            feels_like
+                            "Latitude",
+                            latitude
                         )
 
 
-                    with detail3:
+                    with location2:
 
                         st.metric(
-                            "📍 Location",
-                            "India"
+                            "Longitude",
+                            longitude
                         )
 
 
@@ -853,15 +782,15 @@ if prompt_to_process:
                 for tool in tool_results:
 
                     if tool["name"] != "get_news":
+
                         continue
 
 
-                    args = tool["args"]
-
-                    city = args.get(
+                    city = tool["args"].get(
                         "city",
                         "City"
                     )
+
 
                     result_text = tool["result"]
 
@@ -878,7 +807,9 @@ if prompt_to_process:
 
                         lines = section.splitlines()
 
+
                         if not lines:
+
                             continue
 
 
@@ -889,12 +820,16 @@ if prompt_to_process:
                             r"^\d+\.",
                             first_line
                         ):
+
                             continue
 
 
                         title = re.sub(
+
                             r"^\d+\.\s*",
+
                             "",
+
                             first_line
                         )
 
@@ -928,14 +863,19 @@ if prompt_to_process:
                                 ).strip()
 
 
-                        news_items.append(
-                            {
-                                "title": title,
-                                "url": url,
-                                "summary": summary
-                            }
-                        )
+                        news_items.append({
 
+                            "title": title,
+
+                            "url": url,
+
+                            "summary": summary
+                        })
+
+
+                    # =================================================
+                    # DISPLAY NEWS
+                    # =================================================
 
                     if news_items:
 
@@ -989,21 +929,24 @@ if prompt_to_process:
                 # SAVE ASSISTANT MESSAGE
                 # =================================================
 
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": answer,
-                        "time": datetime.now().strftime(
-                            "%I:%M %p"
-                        )
-                    }
-                )
+                st.session_state.messages.append({
+
+                    "role": "assistant",
+
+                    "content": answer,
+
+                    "time": datetime.now().strftime(
+                        "%I:%M %p"
+                    )
+                })
 
 
             except Exception as e:
 
                 error_message = (
-                    f"⚠️ Something went wrong.\n\n"
+
+                    "⚠️ Something went wrong.\n\n"
+
                     f"`{str(e)}`"
                 )
 
@@ -1013,12 +956,13 @@ if prompt_to_process:
                 )
 
 
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": error_message,
-                        "time": datetime.now().strftime(
-                            "%I:%M %p"
-                        )
-                    }
-                )
+                st.session_state.messages.append({
+
+                    "role": "assistant",
+
+                    "content": error_message,
+
+                    "time": datetime.now().strftime(
+                        "%I:%M %p"
+                    )
+                })

@@ -1,9 +1,15 @@
 import os
+import json
 import requests
 
 from dotenv import load_dotenv
 from langchain.tools import tool
 from tavily import TavilyClient
+
+
+# ============================================================
+# LOAD ENVIRONMENT VARIABLES
+# ============================================================
 
 load_dotenv()
 
@@ -14,17 +20,20 @@ load_dotenv()
 
 @tool
 def get_weather(city: str) -> str:
-    """Get current weather of a city in India."""
+    """
+    Get current weather information for a city in India.
 
-    api_key = os.getenv(
-        "OPENWEATHER_API_KEY"
-    )
+    Returns only:
+    City, Latitude, Longitude, Temperature, Pressure, Humidity
+    """
+
+    api_key = os.getenv("OPENWEATHER_API_KEY")
 
     if not api_key:
-        return (
-            "Error: OPENWEATHER_API_KEY "
-            "is not configured."
-        )
+        return json.dumps({
+            "success": False,
+            "error": "OPENWEATHER_API_KEY is not configured."
+        })
 
     url = (
         "https://api.openweathermap.org/data/2.5/weather"
@@ -40,48 +49,107 @@ def get_weather(city: str) -> str:
             timeout=10
         )
 
+        response.raise_for_status()
+
         data = response.json()
+
+        # ====================================================
+        # API ERROR
+        # ====================================================
 
         if str(data.get("cod")) != "200":
 
-            return (
-                "Error: "
-                + data.get(
+            return json.dumps({
+                "success": False,
+                "error": data.get(
                     "message",
-                    "Could not fetch weather"
+                    "Could not fetch weather."
                 )
+            })
+
+        # ====================================================
+        # ONLY REQUIRED DATA
+        # ====================================================
+
+        result = {
+            "city": data.get(
+                "name",
+                city
+            ),
+
+            "latitude": data.get(
+                "coord",
+                {}
+            ).get(
+                "lat"
+            ),
+
+            "longitude": data.get(
+                "coord",
+                {}
+            ).get(
+                "lon"
+            ),
+
+            "temperature": data.get(
+                "main",
+                {}
+            ).get(
+                "temp"
+            ),
+
+            "pressure": data.get(
+                "main",
+                {}
+            ).get(
+                "pressure"
+            ),
+
+            "humidity": data.get(
+                "main",
+                {}
+            ).get(
+                "humidity"
             )
+        }
 
-        temp = data["main"]["temp"]
-
-        feels_like = data["main"]["feels_like"]
-
-        humidity = data["main"]["humidity"]
-
-        description = data["weather"][0]["description"]
-
-        return (
-            f"Weather in {city}:\n"
-            f"Condition: {description}\n"
-            f"Temperature: {temp}°C\n"
-            f"Feels like: {feels_like}°C\n"
-            f"Humidity: {humidity}%"
+        return json.dumps(
+            result,
+            separators=(",", ":")
         )
+
+    except requests.exceptions.RequestException as e:
+
+        return json.dumps({
+            "success": False,
+            "error": f"Weather API error: {str(e)}"
+        })
 
     except Exception as e:
 
-        return f"Weather API error: {str(e)}"
+        return json.dumps({
+            "success": False,
+            "error": f"Weather API error: {str(e)}"
+        })
 
 
 # ============================================================
-# TAVILY
+# TAVILY CLIENT
 # ============================================================
 
-tavily_client = TavilyClient(
-    api_key=os.getenv(
-        "TAVILY_API_KEY"
-    )
+tavily_api_key = os.getenv(
+    "TAVILY_API_KEY"
 )
+
+if tavily_api_key:
+
+    tavily_client = TavilyClient(
+        api_key=tavily_api_key
+    )
+
+else:
+
+    tavily_client = None
 
 
 # ============================================================
@@ -90,7 +158,15 @@ tavily_client = TavilyClient(
 
 @tool
 def get_news(city: str) -> str:
-    """Get latest news about a city."""
+    """
+    Get latest news about a city.
+    """
+
+    if tavily_client is None:
+
+        return (
+            "Error: TAVILY_API_KEY is not configured."
+        )
 
     try:
 
@@ -146,4 +222,6 @@ def get_news(city: str) -> str:
 
     except Exception as e:
 
-        return f"News API error: {str(e)}"
+        return (
+            f"News API error: {str(e)}"
+        )
